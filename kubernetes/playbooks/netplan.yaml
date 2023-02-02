@@ -1,0 +1,58 @@
+- name: Fix apt signing key because Raxda sucks
+  hosts: rock
+  become: yes
+
+  tasks:
+    - name: Install wget
+      ansible.builtin.apt:
+        name: wget
+        state: present
+
+    - name: Apply new signing key
+      ansible.builtin.apt_key:
+        url: https://apt.radxa.com/focal-stable/public.key
+        state: present
+
+- name: Prepare the rock 5Bs with netplan.io
+  hosts: rock
+  become: yes
+
+  tasks:
+    - name: Install netplan.io
+      ansible.builtin.apt:
+        name: netplan.io
+        state: present
+        update_cache: yes
+
+    - name: Purge ifupdown
+      ansible.builtin.apt:
+        name: ifupdown
+        state: absent
+    
+    - name: Create /etc/netplan directory
+      ansible.builtin.file:
+        path: /etc/netplan
+        state: directory
+        mode: '0755'
+
+
+- name: Apply new netplan configuration
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Template a netplan conf with the correct MAC and IPv4 address on interface eth0
+      ansible.builtin.template:
+        src: templates/netplan_staticip.j2
+        dest: /etc/netplan/default.yaml
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Apply new netplan configuration
+      command: sudo netplan apply
+      async: 45
+      poll: 0
+
+    - name: Reboot
+      ansible.builtin.reboot:
