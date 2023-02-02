@@ -1,0 +1,51 @@
+- name: Login as old user, create new user, add new user to sudoers and adding ssh key to the new user
+  hosts: rock:pi
+  become: yes
+  vars:
+    user_name: "administrator"
+    ansible_user: "{{ v_original_user }}"
+    ansible_password: "{{ v_original_pass }}"
+    ansible_become_password: "{{ v_original_pass }}"
+  vars_prompt:
+    - name: "user_password"    
+      prompt: "new password for {{ user_name }}"    
+      private: yes    
+      encrypt: "sha512_crypt" 
+      confirm: yes    
+      salt_size: 7
+
+  tasks:
+    - name: Add new user
+      ansible.builtin.user: 
+        name: "{{ user_name }}"
+        password: "{{ user_password }}"
+        shell: "/bin/bash"
+
+    - name: Allow passwordless sudo for the new user
+      community.general.sudoers:
+        name: "allow-{{ user_name }}"
+        state: present
+        user: "{{ user_name }}"
+        commands: ALL
+
+    - name: Set authorized key for new user
+      ansible.posix.authorized_key:
+        user: "{{ user_name }}"
+        state: present
+        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+
+- name: Login as new user and delete the original user
+  hosts: rock:pi
+  become: yes
+
+  tasks:
+    - name: Kill all original user running processes
+      command: "pkill -u {{ v_original_user }}"
+
+    - name: Remove original user
+      ansible.builtin.user: 
+        name: "{{ v_original_user }}"
+        state: absent
+        remove: true
+        force: true
+  
