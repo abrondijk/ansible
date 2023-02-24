@@ -1,0 +1,69 @@
+- name: Apt update & apt upgrade
+  hosts: all
+  become: yes
+
+  tasks:
+    - ansible.builtin.apt:
+        upgrade: safe
+        state: present
+        update_cache: yes
+
+    - name: Reboot
+      ansible.builtin.reboot:
+        
+
+- name: Prepare the pi's with kernel headers required for K3S
+  hosts: pi
+  become: yes
+
+  tasks:
+    - name: Install Kernel headers
+      ansible.builtin.apt:
+        name: linux-modules-extra-raspi
+        state: present
+
+    - name: Reboot
+      ansible.builtin.reboot:
+
+
+- name: Install useful packages
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Remove cloud-init and snap
+      ansible.builtin.apt:
+        name:
+          - cloud-init
+          - snapd
+        state: absent
+
+    - name: Remove leftover cloud-init confs 1
+      ansible.builtin.file:
+        path: /etc/cloud
+        state: absent
+
+    - name: Remove leftover cloud-init confs 2
+      ansible.builtin.file:
+        path: /var/lib/cloud
+        state: absent
+        
+    - name: Install packages
+      ansible.builtin.apt:
+        name:
+          - wget
+          - net-tools
+          - lm-sensors
+          - ethtool
+          - keepalived
+          - bash
+          - curl
+          - open-iscsi
+          - nfs-common
+          - powertop
+          - cron
+          - fwupd
+        state: present
+
+    - name: Reboot
+      ansible.builtin.reboot:

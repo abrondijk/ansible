@@ -8,9 +8,9 @@ network:
       - {{ ansible_host }}/24
       routes:
       - to: default
-        via: 10.0.20.1
+        via: {{ v_gateway }}
       nameservers:
         addresses:
-        - 10.0.20.190
+        - {{ v_dns }}
         search: []
   version: 2

@@ -1,0 +1,52 @@
+- name: Setup PiHole
+  hosts: 
+  become: yes
+  vars:
+    user_name: "administrator"
+    ansible_user: "{{ v_original_user }}"
+    ansible_password: "{{ v_original_pass }}"
+    ansible_become_password: "{{ v_original_pass }}"
+  vars_prompt:
+    - name: "pihole_password"    
+      prompt: "password for pihole"    
+      private: yes    
+      encrypt: "sha256_crypt" 
+      confirm: yes    
+      salt_size: 7
+
+  tasks:
+    - name: Create /etc/pihole directory
+      ansible.builtin.file:
+        path: /etc/pihole
+        state: directory
+        mode: '0755'
+
+    - name: Template setupVars.conf
+      ansible.builtin.template:
+        src: templates/pihole.j2
+        dest: /etc/pihole/setupVars.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Set authorized key for new user
+      ansible.posix.authorized_key:
+        user: "{{ user_name }}"
+        state: present
+        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+
+- name: Login as new user and delete the original user
+  hosts: rock:pi
+  become: yes
+
+  tasks:
+    - name: Kill all original user running processes
+      command: "pkill -u {{ v_original_user }}"
+
+    - name: Remove original user
+      ansible.builtin.user: 
+        name: "{{ v_original_user }}"
+        state: absent
+        remove: true
+        force: true
+  

@@ -1,0 +1,59 @@
+- name: Performance tweaks to the rock5b # https://github.com/ThomasKaiser/Knowledge/blob/master/articles/Quick_Preview_of_ROCK_5B.md
+  hosts: rock
+  become: yes
+
+  tasks:
+    - name: Create /root/scripts
+      ansible.builtin.file:
+        path: /root/scripts
+        state: directory
+        mode: '0755'
+
+    - name: Copy script
+      ansible.builtin.copy:
+        src: scripts/rock5_performance_tweaks.sh
+        dest: /root/scripts/rock5_performance_tweaks.sh
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Execute script @reboot
+      ansible.builtin.cron:
+        name: "Performance tweaks"
+        special_time: "reboot"
+        job: "sudo /bin/bash -c '/root/scripts/rock5_performance_tweaks.sh'"
+        
+    - name: Reboot
+      ansible.builtin.reboot:
+
+- name: Tweaks to the RPI4
+  hosts: pi
+  become: yes
+
+  tasks:
+    - name: Disable WiFi
+      ansible.builtin.lineinfile:
+        path: /boot/firmware/config.txt
+        state: present
+        line: dtoverlay=disable-wifi
+        
+    - name: Disable BT
+      ansible.builtin.lineinfile:
+        path: /boot/firmware/config.txt
+        state: present
+        line: dtoverlay=disable-bt
+        
+    - name: Slight overvoltage
+      ansible.builtin.lineinfile:
+        path: /boot/firmware/config.txt
+        state: present
+        line: over_voltage=4
+        
+    - name: Slight overclock
+      ansible.builtin.lineinfile:
+        path: /boot/firmware/config.txt
+        state: present
+        line: arm_freq=1850
+        
+    - name: Reboot
+      ansible.builtin.reboot:

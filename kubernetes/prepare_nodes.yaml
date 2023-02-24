@@ -1,0 +1,5 @@
+- import_playbook: playbooks/replace_default_user.yaml
+- import_playbook: playbooks/netplan.yaml
+- import_playbook: playbooks/packages.yaml
+- import_playbook: playbooks/hardware_tweaks.yaml
+- import_playbook: playbooks/hostname.yaml

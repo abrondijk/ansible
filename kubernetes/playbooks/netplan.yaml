@@ -39,6 +39,9 @@
 - name: Apply new netplan configuration
   hosts: all
   become: yes
+  vars:
+    v_gateway:  "10.0.20.1"
+    v_dns:      "10.0.20.190"
 
   tasks:
     - name: Template a netplan conf with the correct MAC and IPv4 address on interface eth0
